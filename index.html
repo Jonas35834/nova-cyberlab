@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>CYBERLAB – Learn. Explore. Secure.</title>
+  <link rel="stylesheet" href="style.css">
+  
+  <!-- Firebase SDK (Compat Versionen für universelle CDN-Nutzung) -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+</head>
+<body>
+
+  <!-- AUTH MODAL CONTAINER -->
+  <div id="auth-overlay" class="auth-overlay">
+    <div class="auth-card">
+      <div class="auth-header">
+        <span class="auth-logo">🛡️</span>
+        <h2>CYBERLAB</h2>
+        <p>Cybersecurity Learning Platform</p>
+      </div>
+
+      <!-- LOGIN FORM -->
+      <form id="form-login" class="auth-form">
+        <h3>Anmelden</h3>
+        <div class="form-group">
+          <label>E-Mail</label>
+          <input type="email" id="login-email" required placeholder="operator@cyberlab.local">
+        </div>
+        <div class="form-group">
+          <label>Passwort</label>
+          <input type="password" id="login-password" required placeholder="••••••••">
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">EINLOGGEN</button>
+        <div class="auth-links">
+          <a href="#" id="link-show-register">Account erstellen</a> | 
+          <a href="#" id="link-show-reset">Passwort vergessen?</a>
+        </div>
+      </form>
+
+      <!-- REGISTER FORM -->
+      <form id="form-register" class="auth-form hidden">
+        <h3>Account erstellen</h3>
+        <div class="form-group">
+          <label>Benutzername</label>
+          <input type="text" id="reg-username" required placeholder="Jonas">
+        </div>
+        <div class="form-group">
+          <label>E-Mail</label>
+          <input type="email" id="reg-email" required placeholder="operator@cyberlab.local">
+        </div>
+        <div class="form-group">
+          <label>Passwort</label>
+          <input type="password" id="reg-password" required placeholder="••••••••">
+        </div>
+        <div class="form-group">
+          <label>Passwort wiederholen</label>
+          <input type="password" id="reg-password-confirm" required placeholder="••••••••">
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">ACCOUNT ERSTELLEN</button>
+        <div class="auth-links">
+          <a href="#" id="link-show-login-1">Bereits registriert? Login</a>
+        </div>
+      </form>
+
+      <!-- RESET FORM -->
+      <form id="form-reset" class="auth-form hidden">
+        <h3>Passwort zurücksetzen</h3>
+        <div class="form-group">
+          <label>E-Mail Adresse</label>
+          <input type="email" id="reset-email" required placeholder="operator@cyberlab.local">
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">ZURÜCKSETZEN-LINK SENDEN</button>
+        <div class="auth-links">
+          <a href="#" id="link-show-login-2">Zurück zum Login</a>
+        </div>
+      </form>
+
+      <div id="auth-status" class="auth-status hidden"></div>
+      
+      <div class="offline-fallback">
+        <button id="btn-offline-mode" class="btn btn-secondary btn-block">Offline / Gast-Modus starten</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOP BAR -->
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-logo">🛡️</span>
+      <span class="brand-name">CYBERLAB</span>
+      <span class="sync-indicator" id="sync-status" title="Sync Status">🟢 Cloud Synced</span>
+    </div>
+    <div class="user-stats">
+      <div class="stat-badge">
+        <span class="stat-label">LVL</span>
+        <span id="stat-level" class="stat-value">1</span>
+      </div>
+      <div class="stat-badge">
+        <span class="stat-label">XP</span>
+        <span id="stat-xp" class="stat-value">0</span>
+      </div>
+      <div class="stat-badge user-pill">
+        <span id="stat-username">Gast</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN APP LAYOUT -->
+  <div class="app-layout">
+    
+    <!-- NAVIGATION SIDEBAR (Desktop / Tablet) & BOTTOM NAV (Mobile) -->
+    <nav class="sidebar">
+      <button class="nav-btn active" data-view="dashboard">
+        <span class="icon">📊</span><span class="label">Dashboard</span>
+      </button>
+      <button class="nav-btn" data-view="practice">
+        <span class="icon">🎓</span><span class="label">Übungsmodus</span>
+      </button>
+      <button class="nav-btn" data-view="freemode">
+        <span class="icon">🧪</span><span class="label">Freier Modus</span>
+      </button>
+      <button class="nav-btn" data-view="missions">
+        <span class="icon">🎯</span><span class="label">Aufträge</span>
+      </button>
+      <button class="nav-btn" data-view="commands">
+        <span class="icon">📖</span><span class="label">Befehle</span>
+      </button>
+      <button class="nav-btn" data-view="lab">
+        <span class="icon">🧰</span><span class="label">Labor</span>
+      </button>
+      <button class="nav-btn" data-view="progress">
+        <span class="icon">🏆</span><span class="label">Fortschritt</span>
+      </button>
+      <button class="nav-btn" data-view="profile">
+        <span class="icon">👤</span><span class="label">Profil</span>
+      </button>
+      <button class="nav-btn" data-view="settings">
+        <span class="icon">⚙️</span><span class="label">Einstellungen</span>
+      </button>
+    </nav>
+
+    <!-- MAIN CONTENT VIEW AREA -->
+    <main class="content-area">
+
+      <!-- VIEW: DASHBOARD -->
+      <section id="view-dashboard" class="view active">
+        <div class="welcome-banner">
+          <h1>Willkommen, <span id="dash-username">Operator</span>!</h1>
+          <p>Systeme einsatzbereit. Wähle eine Lektion oder starte ein Szenario.</p>
+        </div>
+
+        <div class="dashboard-grid">
+          <div class="card profile-card">
+            <h3>Operator Status</h3>
+            <div class="level-display">
+              <span class="level-title">Level <span id="dash-level">1</span></span>
+              <span class="xp-title"><span id="dash-xp">0</span> XP</span>
+            </div>
+            <div class="progress-bar-bg">
+              <div id="dash-xp-bar" class="progress-bar-fill" style="width: 0%;"></div>
+            </div>
+            <div class="next-level-info">Nächste Stufe in: <span id="dash-next-xp">100</span> XP</div>
+
+            <h4 class="mt-4">Fähigkeiten-Matrix</h4>
+            <div class="skill-bars">
+              <div class="skill-item"><span>Linux</span><span id="sk-linux-txt">0%</span></div>
+              <div class="progress-bar-bg"><div id="sk-linux-bar" class="progress-bar-fill green" style="width:0%"></div></div>
+
+              <div class="skill-item"><span>Netzwerke</span><span id="sk-net-txt">0%</span></div>
+              <div class="progress-bar-bg"><div id="sk-net-bar" class="progress-bar-fill green" style="width:0%"></div></div>
+
+              <div class="skill-item"><span>Cybersecurity</span><span id="sk-sec-txt">0%</span></div>
+              <div class="progress-bar-bg"><div id="sk-sec-bar" class="progress-bar-fill green" style="width:0%"></div></div>
+
+              <div class="skill-item"><span>Web Security</span><span id="sk-web-txt">0%</span></div>
+              <div class="progress-bar-bg"><div id="sk-web-bar" class="progress-bar-fill green" style="width:0%"></div></div>
+            </div>
+          </div>
+
+          <div class="card-action-grid">
+            <div class="card card-recommend">
+              <span class="badge">Empfehlung</span>
+              <h3 id="rec-lesson-title">Lektion 001 – Was ist ein Computer?</h3>
+              <p id="rec-lesson-desc">Bereit für den nächsten Schritt in deiner Ausbildung.</p>
+              <button class="btn btn-primary mt-2" onclick="startRecommendedLesson()">Lektion starten</button>
+            </div>
+
+            <div class="card card-clickable" onclick="switchView('practice')">
+              <div class="card-icon">🎓</div>
+              <h3>Übungsmodus</h3>
+              <p>120 strukturierte Lektionen von Grundlagen bis Web Security.</p>
+            </div>
+            <div class="card card-clickable" onclick="switchView('freemode')">
+              <div class="card-icon">🧪</div>
+              <h3>Freier Modus</h3>
+              <p>In-Memory Linux-Sandbox frei erkunden und testen.</p>
+            </div>
+            <div class="card card-clickable" onclick="switchView('missions')">
+              <div class="card-icon">🎯</div>
+              <h3>Aufträge</h3>
+              <p>Reale Szenarien wie Broken Web Server analysieren.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW: PRACTICE (120 LESSONS) -->
+      <section id="view-practice" class="view">
+        <div class="practice-layout">
+          <!-- LESSON SELECTOR / SIDEBAR -->
+          <div class="panel lesson-selector-panel">
+            <h3>120 Lektionen</h3>
+            <div class="category-filter">
+              <select id="practice-cat-filter" class="form-control">
+                <option value="ALL">Alle Kategorien</option>
+              </select>
+            </div>
+            <div id="lesson-list-container" class="lesson-list"></div>
+          </div>
+
+          <!-- ACTIVE LESSON CONTENT -->
+          <div class="panel practice-content-panel">
+            <div id="lesson-detail-view">
+              <div class="lesson-header">
+                <span class="badge" id="les-category">Kategorie</span>
+                <span class="badge badge-diff" id="les-diff">Einfach</span>
+                <span class="badge badge-xp" id="les-xp">+50 XP</span>
+                <h2 id="les-title">Lektion auswählen</h2>
+              </div>
+
+              <div class="lesson-body">
+                <h4>Ziel</h4>
+                <p id="les-objective">-</p>
+
+                <h4>Erklärung</h4>
+                <p id="les-explanation">-</p>
+
+                <div class="task-box">
+                  <h4>🎯 Aufgabe</h4>
+                  <p id="les-task">-</p>
+                </div>
+
+                <div id="hint-box" class="hint-box hidden">
+                  <h4>💡 Hinweis</h4>
+                  <p id="hint-text"></p>
+                </div>
+
+                <div class="action-buttons">
+                  <button id="btn-hint" class="btn btn-secondary">Hinweis anfordern</button>
+                </div>
+
+                <!-- QUIZ SECTION -->
+                <div id="quiz-container" class="quiz-box hidden">
+                  <h4>🧠 Quiz zur Lektion</h4>
+                  <p id="quiz-question"></p>
+                  <div id="quiz-options" class="quiz-options"></div>
+                  <div id="quiz-feedback" class="quiz-feedback"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- TERMINAL PANEL FOR PRACTICE -->
+            <div class="terminal-container mt-4">
+              <div class="terminal-header">
+                <span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span>
+                <span class="term-title">CYBERLAB Interactive Terminal</span>
+              </div>
+              <div id="prac-term-output" class="terminal-body"></div>
+              <div class="terminal-input-row">
+                <span class="prompt" id="prac-prompt">user@cyberlab:~$</span>
+                <input type="text" id="prac-term-input" autocomplete="off" spellcheck="false" placeholder="Befehl eingeben...">
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW: FREEMODE -->
+      <section id="view-freemode" class="view">
+        <div class="section-header">
+          <h2>Freier Modus (Virtual Linux Sandbox)</h2>
+          <p>Vollständig isolierte Umgebung. Keine echten Netzwerksockets oder Shells.</p>
+        </div>
+        <div class="terminal-container main-term">
+          <div class="terminal-header">
+            <span class="term-dot red"></span><span class="term-dot yellow"></span><span class="term-dot green"></span>
+            <span class="term-title">bash - 80x24</span>
+          </div>
+          <div id="free-term-output" class="terminal-body"></div>
+          <div class="terminal-input-row">
+            <span class="prompt" id="free-prompt">user@cyberlab:~$</span>
+            <input type="text" id="free-term-input" autocomplete="off" spellcheck="false" placeholder="Befehl ausführen (z.B. help, scan 10.0.0.20)...">
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW: MISSIONS -->
+      <section id="view-missions" class="view">
+        <div class="section-header">
+          <h2>Sicherheitsaufträge & Szenarien</h2>
+          <p>Löse komplexe Aufgaben in der simulierten Infrastruktur.</p>
+        </div>
+        <div class="missions-grid" id="missions-container"></div>
+      </section>
+
+      <!-- VIEW: COMMAND REFERENCE -->
+      <section id="view-commands" class="view">
+        <div class="section-header">
+          <h2>Command Reference</h2>
+          <p>Ausführliche Dokumentation aller in der Simulation verfügbaren Befehle.</p>
+          <input type="text" id="cmd-search-input" class="form-control mt-2" placeholder="🔎 Befehl suchen (z.B. ls, scan, chmod)...">
+        </div>
+
+        <div class="commands-layout">
+          <div class="cmd-sidebar" id="cmd-list-menu"></div>
+          <div class="cmd-detail-panel card" id="cmd-detail-view">
+            <h3>Befehl auswählen</h3>
+            <p>Wähle einen Befehl aus der Liste links, um Syntax, Beispiele und Parameter anzuzeigen.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW: LAB -->
+      <section id="view-lab" class="view">
+        <div class="section-header">
+          <h2>Virtuelles Netzwerk-Labor</h2>
+          <p>Virtuelle Topologie konfigurieren (Vorbereitet für spätere Realtime-Multiplayer-Syncs).</p>
+        </div>
+        <div class="lab-controls">
+          <button class="btn btn-secondary" onclick="addLabNode('PC')">+ PC</button>
+          <button class="btn btn-secondary" onclick="addLabNode('SERVER')">+ Server</button>
+          <button class="btn btn-secondary" onclick="addLabNode('ROUTER')">+ Router</button>
+        </div>
+        <div class="lab-grid mt-4" id="lab-nodes-grid"></div>
+      </section>
+
+      <!-- VIEW: PROGRESS -->
+      <section id="view-progress" class="view">
+        <div class="section-header">
+          <h2>Dein Fortschritt & Achievements</h2>
+        </div>
+        <div class="card mb-4">
+          <h3>Erreichte Meilensteine</h3>
+          <p>Absolvierte Lektionen: <strong id="prog-lessons-count">0 / 120</strong></p>
+          <p>Absolvierte Missionen: <strong id="prog-missions-count">0</strong></p>
+        </div>
+        <h3>Achievements</h3>
+        <div class="achievements-grid" id="achievements-container"></div>
+      </section>
+
+      <!-- VIEW: PROFILE -->
+      <section id="view-profile" class="view">
+        <div class="section-header">
+          <h2>Benutzerprofil</h2>
+        </div>
+        <div class="card">
+          <p><strong>Benutzername:</strong> <span id="prof-username">-</span></p>
+          <p><strong>E-Mail:</strong> <span id="prof-email">-</span></p>
+          <p><strong>Konto-Status:</strong> <span id="prof-verified">E-Mail nicht verifiziert</span></p>
+          <p><strong>Erstellt am:</strong> <span id="prof-created">-</span></p>
+          <button class="btn btn-primary mt-4" id="btn-verify-email">Verifizierungs-E-Mail senden</button>
+        </div>
+      </section>
+
+      <!-- VIEW: SETTINGS -->
+      <section id="view-settings" class="view">
+        <div class="section-header">
+          <h2>Einstellungen</h2>
+        </div>
+        <div class="card">
+          <h3>Cloud Synchronization</h3>
+          <button class="btn btn-secondary" id="btn-manual-sync">Manuell mit Cloud synchronisieren</button>
+          <hr class="my-4">
+          <h3>Sitzung</h3>
+          <button class="btn btn-danger" id="btn-logout">Abmelden</button>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
